@@ -1,0 +1,23 @@
+{
+  "python.analysis.typeCheckingMode": "basic",
+  "python.analysis.diagnosticMode": "openFilesOnly",
+  "python.analysis.stubPath": "typings",
+  "python.testing.pytestArgs": ["app"],
+  "python.testing.unittestEnabled": false,
+  "python.testing.pytestEnabled": true,
+  "python.linting.flake8Enabled": true,
+  "python.linting.enabled": true,
+  "python.linting.flake8CategorySeverity.W": "Warning",
+  "python.linting.flake8CategorySeverity.E": "Error",
+  "python.linting.flake8CategorySeverity.F": "Error",
+  "python.linting.mypyEnabled": false,
+  "python.analysis.diagnosticSeverityOverrides": {
+    "reportUnknownVariableType": "none",
+    "reportUnknownMemberType": "none"
+  },
+  "workbench.colorTheme": "Tomorrow Night Blue",
+  "editor.fontFamily": "Consolas, 'Courier New', monospace",
+  "files.exclude": {
+    "**/.git": false
+  }
+}
