@@ -1,22 +1,14 @@
 from typing import Optional
-from uuid import uuid4
-from pydantic import UUID4
-from sqlalchemy.dialects.postgresql import UUID
-
-from sqlalchemy import Column
 from sqlmodel import Field
 from ...base_model import DBModel
 
 
 class User(DBModel, table=True):
-    id: Optional[UUID4] = Field(
-        sa_column=Column(UUID(as_uuid=True), primary_key=True, default=uuid4),
-    )
+    id: Optional[int] = Field(primary_key=True, default=None)
     name: str
+    email: str = Field(index=True)
+    google_id: Optional[str] = Field(index=True, nullable=True)
 
     @staticmethod
-    def create_user(name: str):
-        return User(
-            name=name,
-            id=uuid4(),
-        )
+    def create_user(name: str, email: str, google_id: Optional[str] = None):
+        return User(name=name, email=email, google_id=google_id)

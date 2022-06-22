@@ -2,7 +2,7 @@
   "python.analysis.typeCheckingMode": "basic",
   "python.analysis.diagnosticMode": "openFilesOnly",
   "python.analysis.stubPath": "typings",
-  "python.testing.pytestArgs": ["app"],
+  "python.testing.pytestArgs": ["tests"],
   "python.testing.unittestEnabled": false,
   "python.testing.pytestEnabled": true,
   "python.linting.flake8Enabled": true,
@@ -16,8 +16,8 @@
     "reportUnknownMemberType": "none"
   },
   "workbench.colorTheme": "Tomorrow Night Blue",
-  "editor.fontFamily": "Consolas, 'Courier New', monospace",
   "files.exclude": {
     "**/.git": false
-  }
+  },
+  "python.formatting.provider": "black"
 }

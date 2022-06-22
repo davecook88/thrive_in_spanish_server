@@ -12,7 +12,8 @@
       "module": "uvicorn",
       "args": ["app.main:app", "--reload"],
       "jinja": true,
-      "envFile": "${workspaceFolder}/.env"
+      "envFile": "${workspaceFolder}/.env",
+      "python": "${command:python.interpreterPath}"
     }
   ]
 }

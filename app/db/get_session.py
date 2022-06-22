@@ -5,8 +5,8 @@ from app.core.config import settings
 # import all models here
 from app.db.models.user.user import User  # noqa
 from app.db.models.availability.availability_models import (  # noqa
-    TeacherAvailabilityEntry  # noqa
-)  
+    TeacherAvailability,  # noqa
+)
 
 
 def _get_engine(db_url: str):

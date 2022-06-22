@@ -8,13 +8,13 @@ from sqlmodel import Field, Relationship
 from sqlalchemy.dialects.postgresql import UUID
 
 from ...base_model import DBModel
-from app.db.models.user.user import User
+from app.db.models.user.teacher import Teacher
 
 
-AvailabilityType = Literal["open", "booked", "unavailable"]
+AvailabilityType = Literal["available"]
 
 
-class TeacherAvailabilityEntry(DBModel, table=True):
+class TeacherAvailability(DBModel, table=True):
     """
     Table which stores availability data for teachers.
 
@@ -26,13 +26,9 @@ class TeacherAvailabilityEntry(DBModel, table=True):
         sa_column=Column(UUID(as_uuid=True), primary_key=True, default=uuid4),
     )
 
-    type: str
-    from_time: datetime
-    until_time: datetime
+    type: str = "available"
+    start: datetime
+    end: datetime
 
-    recurring: Optional[bool] = False
-    recurring_until: Optional[datetime] = None
-    recurring_from: Optional[datetime] = None
-
-    teacher_id: UUID4 = Field(foreign_key="user.id")
-    teacher: "User" = Relationship(back_populates="availability")
+    teacher_id: int = Field(foreign_key="teacher.id")
+    teacher: "Teacher" = Relationship(back_populates="availability")
