@@ -1,5 +1,6 @@
+from typing import Dict, Optional
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel
+from pydantic import BaseModel, validator
 
 from sqlmodel import Session
 from app.auth.get_current_user import get_google_user_from_token
@@ -20,6 +21,18 @@ class CheckGoogleTokenBody(BaseModel):
     token: str
     email: str
     google_id: str
+
+
+class CheckTokenResponse(BaseModel):
+    details: User
+    is_teacher: Optional[bool] = None
+
+    @validator("is_teacher")
+    def set_is_teacher(cls, val: None, values: Dict):
+        user: Optional[User] = values.get("user")
+        if not user:
+            raise ValueError("user not found")
+        return user.is_teacher
 
 
 @auth_router.post(
@@ -46,8 +59,9 @@ async def check_google_token(
                 google_id=google_info.sub,
             )
             await user.save(session)
-
-        return user
+        if not user.id:
+            raise ValueError("No user ID")
+        return CheckTokenResponse(details=user)
     except ValueError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
