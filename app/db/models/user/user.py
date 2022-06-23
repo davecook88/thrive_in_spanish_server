@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import ClassVar, Optional
 from sqlmodel import Field
 from ...base_model import DBModel
 
@@ -12,3 +12,7 @@ class User(DBModel, table=True):
     @staticmethod
     def create_user(name: str, email: str, google_id: Optional[str] = None):
         return User(name=name, email=email, google_id=google_id)
+
+
+class UserFull(User):
+    id: ClassVar[int]

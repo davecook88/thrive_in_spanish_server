@@ -3,7 +3,10 @@ from pydantic import BaseModel
 
 from sqlalchemy import and_
 from app.auth.get_current_user import get_current_user
-from app.bookings.types import PostAvailabilityPayload
+from app.bookings.types import (
+    PostAvailabilityPayload,
+    PostAvailabilityPayloadEvent,
+)
 from app.bookings.utils import clear_availability
 from app.db.get_session import get_session
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -14,7 +17,7 @@ from app.db.models.availability.availability_models import (
 from datetime import datetime
 from app.db.models.user.teacher import Teacher
 
-from app.db.models.user.user import User
+from app.db.models.user.user import User, UserFull
 
 booking_router = APIRouter(
     prefix="/bookings",
@@ -47,7 +50,7 @@ async def list_bookings_params(
     "/teacher-availability", response_model=List[TeacherAvailability]
 )
 async def get_availiability(
-    current_user: User = Depends(get_current_user),
+    current_user: UserFull = Depends(get_current_user),
     params: ListBookingsParams = Depends(list_bookings_params),
     session: Session = Depends(get_session),
 ) -> List[TeacherAvailability]:
@@ -73,21 +76,13 @@ async def get_availiability(
 )
 async def create_availability(
     payload: PostAvailabilityPayload,
-    current_user: User = Depends(get_current_user),
+    current_user: UserFull = Depends(get_current_user),
     session: Session = Depends(get_session),
 ):
-    if not current_user.id:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="Couldn't retrieve user",
-        )
-    teacher = (
-        session.query(Teacher)
-        .filter(Teacher.user_id == current_user.id)
-        .first()
+
+    teacher = Teacher.get_teacher_by_user_id(
+        session=session, user_id=current_user.id
     )
-    if not teacher:
-        raise ValueError(f"No teacher found for user {current_user.id}")
 
     await clear_availability(
         session=session,
@@ -117,22 +112,13 @@ async def create_availability(
 )
 async def delete_availability(
     availability_id: str,
-    current_user: User = Depends(get_current_user),
+    current_user: UserFull = Depends(get_current_user),
     session: Session = Depends(get_session),
 ):
-    if not current_user.id:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="Couldn't retrieve user",
-        )
-    teacher = (
-        session.query(Teacher)
-        .filter(Teacher.user_id == current_user.id)
-        .first()
-    )
-    if not teacher:
-        raise ValueError(f"No teacher found for user {current_user.id}")
 
+    teacher = Teacher.get_teacher_by_user_id(
+        session=session, user_id=current_user.id
+    )
     availability = session.get(TeacherAvailability, availability_id)
     if not availability:
         raise HTTPException(
@@ -146,3 +132,31 @@ async def delete_availability(
         )
     session.delete(availability)
     session.commit()
+
+
+@booking_router.put(
+    "/teacher-availability/{availability_id}", status_code=status.HTTP_200_OK
+)
+async def update_availability(
+    availability_id: str,
+    payload: PostAvailabilityPayloadEvent,
+    current_user: UserFull = Depends(get_current_user),
+    session: Session = Depends(get_session),
+):
+    teacher = Teacher.get_teacher_by_user_id(
+        session=session, user_id=current_user.id
+    )
+    availability = session.get(TeacherAvailability, availability_id)
+    if not availability:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No availability found by id",
+        )
+    if not availability.teacher_id == teacher.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You don't have permission to delete this.",
+        )
+    availability.update(payload)
+    await availability.save(session)
+    return session.get(TeacherAvailability, availability_id)

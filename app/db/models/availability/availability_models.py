@@ -7,6 +7,10 @@ from sqlalchemy import Column
 from sqlmodel import Field, Relationship
 from sqlalchemy.dialects.postgresql import UUID
 
+from app.bookings.types import (
+    PostAvailabilityPayloadEvent,
+)
+
 from ...base_model import DBModel
 from app.db.models.user.teacher import Teacher
 
@@ -32,3 +36,10 @@ class TeacherAvailability(DBModel, table=True):
 
     teacher_id: int = Field(foreign_key="teacher.id")
     teacher: "Teacher" = Relationship(back_populates="availability")
+    title: Optional[str] = "available"
+
+    def update(self, payload: PostAvailabilityPayloadEvent):
+        self.start = payload.start
+        self.end = payload.end
+        if payload.title:
+            self.title = payload.title

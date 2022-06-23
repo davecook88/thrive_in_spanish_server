@@ -123,3 +123,51 @@ class TestAvailabilitiesRouter:
 
         all_availability = session.query(TeacherAvailability).all()
         assert len(all_availability) == 2
+
+    def test_delete_availability(
+        self,
+        app_user_override: FastAPI,
+        session: Session,
+        client: TestClient,
+        user: User,
+        teacher: Teacher,
+        schedule: List[TeacherAvailability],
+    ):
+        availability_id = schedule[0].id
+        model_in_db = session.get(TeacherAvailability, availability_id)
+        assert model_in_db
+        if not availability_id:
+            raise Exception()
+        response = client.delete(
+            f"/bookings/teacher-availability/{availability_id}"
+        )
+        assert response.status_code == 202
+        model_in_db = session.get(TeacherAvailability, availability_id)
+        assert not model_in_db
+
+    def test_update_availability(
+        self,
+        app_user_override: FastAPI,
+        session: Session,
+        client: TestClient,
+        user: User,
+        teacher: Teacher,
+        schedule: List[TeacherAvailability],
+    ):
+        availability_id = schedule[0].id
+        if not availability_id:
+            raise Exception()
+        new_start = datetime(2022, 8, 1, 9)
+        new_end = datetime(2022, 8, 1, 19)
+        update = PostAvailabilityPayloadEvent(
+            id=availability_id, start=new_start, end=new_end
+        )
+
+        response = client.put(
+            f"/bookings/teacher-availability/{availability_id}",
+            data=json.dumps(update.dict(), default=str),
+        )
+        assert response.status_code == 200
+        response_json = response.json()
+        assert response_json["end"] == new_end.isoformat()
+        assert response_json["start"] == new_start.isoformat()
