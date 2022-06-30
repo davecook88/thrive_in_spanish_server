@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Callable, ClassVar, Literal, Optional, Union
+from typing import Literal, Optional
 from uuid import uuid4
 
 from pydantic import UUID4
@@ -12,7 +12,7 @@ from app.bookings.types import (
 )
 
 from ...base_model import DBModel
-from app.db.models.user.teacher import Teacher
+from app.db.models.user.user import Teacher
 
 
 AvailabilityType = Literal["available"]
@@ -26,9 +26,6 @@ class TeacherAvailability(DBModel, table=True):
     a recurring event.
     """
 
-    __tablename__: ClassVar[
-        Union[str, Callable[..., str]]
-    ] = "teacher_availability"
     id: Optional[UUID4] = Field(
         sa_column=Column(UUID(as_uuid=True), primary_key=True, default=uuid4),
     )
@@ -36,9 +33,8 @@ class TeacherAvailability(DBModel, table=True):
     type: str = "available"
     start: datetime
     end: datetime
-
-    teacher_id: int = Field(foreign_key="teacher.id")
-    teacher: "Teacher" = Relationship(back_populates="availability")
+    teacher_id: Optional[int] = Field(default=None, foreign_key="teacher.id")
+    teacher: Optional[Teacher] = Relationship(back_populates="availability")
     title: Optional[str] = "available"
 
     def update(self, payload: PostAvailabilityPayloadEvent):

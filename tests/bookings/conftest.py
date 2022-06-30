@@ -1,8 +1,7 @@
 from datetime import datetime
 import pytest_asyncio
 from sqlmodel import Session
-from app.db.models.user.user import User
-from app.db.models.user.teacher import Teacher
+from app.db.models.user.user import User, Teacher
 from app.db.models.availability.availability_models import TeacherAvailability
 
 

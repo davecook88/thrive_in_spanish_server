@@ -15,9 +15,8 @@ from app.db.models.availability.availability_models import (
     TeacherAvailability,
 )
 from datetime import datetime
-from app.db.models.user.teacher import Teacher
 
-from app.db.models.user.user import User, UserFull
+from app.db.models.user.user import User, UserFull, Teacher
 
 booking_router = APIRouter(
     prefix="/bookings",

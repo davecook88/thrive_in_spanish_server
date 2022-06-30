@@ -27,13 +27,6 @@ class CheckTokenResponse(BaseModel):
     details: User
     is_teacher: Optional[bool] = None
 
-    @validator("is_teacher")
-    def set_is_teacher(cls, val: None, values: Dict):
-        user: Optional[User] = values.get("user")
-        if not user:
-            raise ValueError("user not found")
-        return user.is_teacher
-
 
 @auth_router.post(
     "/google",
@@ -61,7 +54,8 @@ async def check_google_token(
             await user.save(session)
         if not user.id:
             raise ValueError("No user ID")
-        return CheckTokenResponse(details=user)
+        res = CheckTokenResponse(details=user, is_teacher=bool(user.teacher))
+        return res
     except ValueError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

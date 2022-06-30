@@ -13,9 +13,8 @@ from app.bookings.types import (
     PostAvailabilityPayloadTimeframe,
 )
 from app.db.models.availability.availability_models import TeacherAvailability
-from app.db.models.user.teacher import Teacher
 from app.auth.get_current_user import get_current_user
-from app.db.models.user.user import User
+from app.db.models.user.user import User, Teacher
 
 
 @pytest.fixture
@@ -31,6 +30,12 @@ def app_user_override(fast_api_app: FastAPI, user: User):
 
 
 class TestAvailabilitiesRouter:
+    def test_can_access_teacher_from_availability(
+        self, schedule: List[TeacherAvailability]
+    ):
+        assert schedule[0].teacher_id
+        assert schedule[0].teacher
+
     def test_get_availabilities_endpoint(
         self,
         app_user_override: FastAPI,
