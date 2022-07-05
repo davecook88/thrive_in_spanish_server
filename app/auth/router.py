@@ -1,6 +1,6 @@
-from typing import Dict, Optional
+from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel, validator
+from pydantic import BaseModel
 
 from sqlmodel import Session
 from app.auth.get_current_user import get_google_user_from_token

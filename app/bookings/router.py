@@ -64,6 +64,7 @@ async def get_availiability(
                 col(TeacherAvailability.start) > params.from_date,
             )
         )
+        .offset(params.limit * (params.page - 1))
         .limit(params.limit)
     )
     availability = session.exec(statement).all()

@@ -6,6 +6,7 @@ if TYPE_CHECKING:
     from app.db.models.availability.availability_models import (
         TeacherAvailability,
     )
+    from app.db.models.course.course import CourseStudent
 
 
 class User(DBModel, table=True):
@@ -41,3 +42,11 @@ class Teacher(DBModel, table=True):
         if not teacher:
             raise ValueError(f"No teacher found for user {user_id}")
         return teacher
+
+
+class Student(DBModel, table=True):
+    id: Optional[int] = Field(primary_key=True, default=None)
+
+    user_id: int = Field(foreign_key=User.id)
+    user: User = Relationship(back_populates="student")
+    course_students: "CourseStudent" = Relationship(back_populates="student")
