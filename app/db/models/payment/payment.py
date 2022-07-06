@@ -2,10 +2,16 @@ from datetime import datetime
 from typing import ClassVar, List, Optional, Union, Callable
 
 from pydantic import Field
-from sqlmodel import Relationship
+from sqlmodel import Relationship, Session
+from stripe import PaymentIntent
 from app.db.base_model import DBModel
 from app.db.models.course.course import Course
 from app.db.models.user.user import Student, UserFull
+from app.payment.api.types import StripePaymentIntentMetadata
+
+
+class PaymentModelException(Exception):
+    pass
 
 
 class Payment(DBModel, table=True):
@@ -16,6 +22,25 @@ class Payment(DBModel, table=True):
     payment_date: datetime = datetime.utcnow()
     package_id: int = Field(foreign_key="payment_package.id")
     package: "PaymentPackage" = Relationship()
+
+    @staticmethod
+    def register_stripe_payment_intent(
+        session: Session, payment_intent: PaymentIntent
+    ) -> "Payment":
+        metadata = StripePaymentIntentMetadata(**payment_intent["metadata"])
+        user = (
+            session.query(UserFull)
+            .filter(UserFull.google_id == metadata.user_google_id)
+            .first()
+        )
+        if not user:
+            raise PaymentModelException(
+                f"User not found for google id {metadata.user_google_id}"
+            )
+        payment = Payment(user_id=user.id, amount=payment_intent["amount"])
+        session.add(payment)
+        session.commit()
+        return payment
 
 
 class PaymentPackage(DBModel, table=True):

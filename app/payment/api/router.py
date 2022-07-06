@@ -1,15 +1,19 @@
-from typing import Dict, Literal
-from fastapi import APIRouter, Depends, Header, Request
+from typing import Literal
+from fastapi import APIRouter, Depends, HTTPException, Header, Request, status
 from pydantic import BaseModel
 from sqlmodel import Session
 from stripe import PaymentIntent
+from app.auth.get_current_user import get_current_user
 from app.core.config import settings
+from app.db.models.payment.payment import Payment
 
 
 from app.db.get_session import get_session
 
 import stripe
+from app.db.models.user.user import UserFull
 from app.payment.api.dependencies import get_stripe_api_key
+from app.payment.api.types import StripePaymentIntentMetadata
 
 
 payment_router = APIRouter(
@@ -31,12 +35,22 @@ async def create_payment_intent(
     payload: CreatePaymentIntentPayload,
     stripe_api_key: str = Depends(get_stripe_api_key),
     session: Session = Depends(get_session),
+    current_user: UserFull = Depends(get_current_user),
 ):
     stripe.api_key = stripe_api_key
+    if not current_user.google_id:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Couldn't get a Google ID for current user",
+        )
+    metadata = StripePaymentIntentMetadata(
+        course_package=payload.course_package,
+        user_google_id=current_user.google_id,
+    )
     intent = stripe.PaymentIntent.create(
         amount=payload.amount,
         currency=payload.currency,
-        metadata={"course_package": payload.course_package},
+        metadata=metadata.__dict__,
     )
     return {"secret": intent["client_secret"]}
 
@@ -45,6 +59,7 @@ async def create_payment_intent(
 async def receive_stripe_webhook(
     request: Request,
     stripe_signature: str = Header(str),
+    session: Session = Depends(get_session),
 ):
     event = None
     data = await request.body()
@@ -63,7 +78,11 @@ async def receive_stripe_webhook(
         raise e
     if event["type"] == "payment_intent.succeeded":
         payment_intent: PaymentIntent = event["data"]["object"]
-        print(payment_intent)
+
+        Payment.register_stripe_payment_intent(
+            session=session, payment_intent=payment_intent
+        )
+
     # ... handle other event types
     else:
         print("Unhandled event type {}".format(event["type"]))
