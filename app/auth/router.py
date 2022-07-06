@@ -3,10 +3,12 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 
 from sqlmodel import Session
+from app.auth.get_current_org import get_current_organization
 from app.auth.get_current_user import get_google_user_from_token
 from app.core.config import settings
 from app.db.get_session import get_session
 from app.db.models.user.user import User
+from app.organization.model import OrganizationModelFull
 
 
 auth_router = APIRouter(
@@ -32,7 +34,9 @@ class CheckTokenResponse(BaseModel):
     "/google",
 )
 async def check_google_token(
-    body: CheckGoogleTokenBody, session: Session = Depends(get_session)
+    body: CheckGoogleTokenBody,
+    session: Session = Depends(get_session),
+    organization: OrganizationModelFull = Depends(get_current_organization),
 ):
     try:
         user, google_info = await get_google_user_from_token(
@@ -50,6 +54,7 @@ async def check_google_token(
                 name=google_info.name,
                 email=google_info.email,
                 google_id=google_info.sub,
+                organization_id=organization.id,
             )
             await user.save(session)
         if not user.id:
