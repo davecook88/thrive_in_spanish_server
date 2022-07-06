@@ -2,6 +2,7 @@ from typing import Callable, ClassVar, List, Optional, Union, TYPE_CHECKING
 from sqlmodel import Field, Relationship
 from app.db.base_model import DBModel
 from app.db.models.user.user import Teacher, Student
+from app.organization.model import OrganizationModel
 
 if TYPE_CHECKING:
     from app.db.models.payment.payment import PaymentPackage
@@ -9,7 +10,11 @@ if TYPE_CHECKING:
 
 class Course(DBModel, table=True):
     id: Optional[int] = Field(primary_key=True, default=None)
+    organization_id: int = Field(foreign_key="organization.id")
+    organization: OrganizationModel = Relationship()
     name: str
+    description: str
+    price: int
     difficulty: int  # Number to help order in terms of difficulty
     course_teachers: List["CourseTeacher"] = Relationship(
         back_populates="course"

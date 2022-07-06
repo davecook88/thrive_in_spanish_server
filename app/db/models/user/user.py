@@ -1,3 +1,4 @@
+from app.organization.model import OrganizationModel
 from ...base_model import DBModel
 from typing import TYPE_CHECKING, ClassVar, List, Optional
 from sqlmodel import Field, Relationship, Session
@@ -17,10 +18,23 @@ class User(DBModel, table=True):
     teacher: Optional["Teacher"] = Relationship(
         back_populates="user",
     )
+    organization_id: int = Field(foreign_key="organization.id")
+    organization: OrganizationModel = Relationship()
 
     @staticmethod
-    def create_user(name: str, email: str, google_id: Optional[str] = None):
-        return User(name=name, email=email, google_id=google_id)
+    def create_user(
+        name: str,
+        organization_id: int,
+        email: str,
+        google_id: Optional[str] = None,
+    ):
+
+        return User(
+            name=name,
+            email=email,
+            google_id=google_id,
+            organization_id=organization_id,
+        )
 
 
 class UserFull(User):
@@ -44,9 +58,17 @@ class Teacher(DBModel, table=True):
         return teacher
 
 
+class TeacherFull(Teacher):
+    id: ClassVar[int]
+
+
 class Student(DBModel, table=True):
     id: Optional[int] = Field(primary_key=True, default=None)
 
     user_id: int = Field(foreign_key=User.id)
     user: User = Relationship(back_populates="student")
     course_students: "CourseStudent" = Relationship(back_populates="student")
+
+
+class StudentFull(Student):
+    id: ClassVar[int]

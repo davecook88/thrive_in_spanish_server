@@ -5,11 +5,12 @@ import pytest
 import pytest_asyncio
 from sqlalchemy.future.engine import Engine
 from sqlmodel import SQLModel, Session, create_engine
-from app.db.models.user.user import User
+from app.db.models.user.user import Teacher, User, UserFull
 from app.main import app
 from app.core.config import Settings
 from fastapi.testclient import TestClient
 from app.db.get_session import get_session
+from app.organization.model import OrganizationModel, OrganizationModelFull
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -64,12 +65,30 @@ def google_id() -> str:
 
 
 @pytest_asyncio.fixture
-async def user(session: Session, google_id: str) -> User:
+def organization(session: Session) -> OrganizationModelFull:
+    return OrganizationModel.get_default_organization(session)
+
+
+@pytest_asyncio.fixture
+async def user(
+    session: Session, google_id: str, organization: OrganizationModelFull
+) -> UserFull:
     u = User.create_user(
-        name="test user", email="email@domain.com", google_id=google_id
+        name="test user",
+        email="email@domain.com",
+        google_id=google_id,
+        organization_id=organization.id,
     )
     await u.save(session)
-    user = session.get(User, u.id)
+    user = session.get(UserFull, u.id)
     if not user:
         raise Exception("User fixture didn't save correctly")
     return user
+
+
+@pytest_asyncio.fixture
+async def teacher(session: Session, user: UserFull):
+    t = Teacher(user_id=user.id)
+    session.add(t)
+    session.commit()
+    return t

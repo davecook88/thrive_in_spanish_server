@@ -1,6 +1,4 @@
 from typing import List
-from pydantic import BaseModel
-
 from sqlalchemy import and_
 from app.auth.get_current_user import get_current_user
 from app.bookings.types import (
@@ -17,6 +15,7 @@ from app.db.models.availability.availability_models import (
 from datetime import datetime
 
 from app.db.models.user.user import User, UserFull, Teacher
+from app.utils.params import ListAPIParams
 
 booking_router = APIRouter(
     prefix="/bookings",
@@ -26,11 +25,9 @@ booking_router = APIRouter(
 )
 
 
-class ListBookingsParams(BaseModel):
+class ListBookingsParams(ListAPIParams):
     from_date: datetime
     until_date: datetime
-    limit: int
-    page: int
 
 
 async def list_bookings_params(
