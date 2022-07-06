@@ -12,5 +12,8 @@ class Settings(BaseSettings):
 
     DEFAULT_PAGE_SIZE: int = 100
 
+    STRIPE_API_KEY: str
+    STRIPE_WEBHOOK_SECRET: str
+
 
 settings = Settings()  # type: ignore
