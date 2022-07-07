@@ -1,16 +1,17 @@
-from typing import Any, AsyncGenerator
+from typing import Any, AsyncGenerator, Optional
 from dotenv import load_dotenv
 from fastapi import FastAPI
 import pytest
 import pytest_asyncio
 from sqlalchemy.future.engine import Engine
 from sqlmodel import SQLModel, Session, create_engine
+from app.auth.get_current_user import get_current_user
 from app.db.models.user.user import Teacher, User, UserFull
 from app.main import app
 from app.core.config import Settings
 from fastapi.testclient import TestClient
 from app.db.get_session import get_session
-from app.organization.model import OrganizationModel, OrganizationModelFull
+from app.organization.model import OrganizationModel
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -48,31 +49,22 @@ def fast_api_app() -> FastAPI:
     return app
 
 
-@pytest.fixture
-def client(fast_api_app: FastAPI, session: Session) -> TestClient:
-    async def override_get_session() -> AsyncGenerator[TestClient, None]:
-        yield session  # type: ignore
-        return
-
-    fast_api_app.dependency_overrides[get_session] = override_get_session
-
-    return TestClient(fast_api_app)
-
-
 @pytest.fixture(scope="session")
 def google_id() -> str:
     return "abc"
 
 
 @pytest_asyncio.fixture
-def organization(session: Session) -> OrganizationModelFull:
+def organization(session: Session) -> OrganizationModel:
     return OrganizationModel.get_default_organization(session)
 
 
 @pytest_asyncio.fixture
 async def user(
-    session: Session, google_id: str, organization: OrganizationModelFull
-) -> UserFull:
+    session: Session, google_id: str, organization: OrganizationModel
+) -> User:
+    if not organization.id:
+        raise Exception()
     u = User.create_user(
         name="test user",
         email="email@domain.com",
@@ -80,7 +72,7 @@ async def user(
         organization_id=organization.id,
     )
     await u.save(session)
-    user = session.get(UserFull, u.id)
+    user: Optional[User] = session.get(User, u.id)
     if not user:
         raise Exception("User fixture didn't save correctly")
     return user
@@ -92,3 +84,16 @@ async def teacher(session: Session, user: UserFull):
     session.add(t)
     session.commit()
     return t
+
+
+@pytest.fixture
+def client(
+    fast_api_app: FastAPI, session: Session, user: UserFull
+) -> TestClient:
+    async def override_get_session() -> AsyncGenerator[TestClient, None]:
+        yield session  # type: ignore
+        return
+
+    fast_api_app.dependency_overrides[get_session] = override_get_session
+    fast_api_app.dependency_overrides[get_current_user] = lambda: user
+    return TestClient(fast_api_app)

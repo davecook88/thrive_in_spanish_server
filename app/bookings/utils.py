@@ -2,7 +2,7 @@ from datetime import datetime
 
 from sqlmodel import Session, and_, col, delete
 
-from app.db.models.availability.availability_models import TeacherAvailability
+from app.db.models.user.user import TeacherAvailability
 
 
 async def clear_availability(

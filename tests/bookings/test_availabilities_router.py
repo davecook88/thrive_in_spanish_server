@@ -12,9 +12,8 @@ from app.bookings.types import (
     PostAvailabilityPayloadEvent,
     PostAvailabilityPayloadTimeframe,
 )
-from app.db.models.availability.availability_models import TeacherAvailability
 from app.auth.get_current_user import get_current_user
-from app.db.models.user.user import User, Teacher
+from app.db.models.user.user import User, Teacher, TeacherAvailability
 
 
 @pytest.fixture

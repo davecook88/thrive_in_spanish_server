@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.bookings.router import booking_router
 from app.auth.router import auth_router
+
 from app.payment.api.router import payment_router
 from app.course.api.router import course_router
 

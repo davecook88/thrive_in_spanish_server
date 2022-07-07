@@ -8,7 +8,7 @@ from app.auth.get_current_user import get_google_user_from_token
 from app.core.config import settings
 from app.db.get_session import get_session
 from app.db.models.user.user import User
-from app.organization.model import OrganizationModelFull
+from app.organization.model import OrganizationModel
 
 
 auth_router = APIRouter(
@@ -36,8 +36,10 @@ class CheckTokenResponse(BaseModel):
 async def check_google_token(
     body: CheckGoogleTokenBody,
     session: Session = Depends(get_session),
-    organization: OrganizationModelFull = Depends(get_current_organization),
+    organization: OrganizationModel = Depends(get_current_organization),
 ):
+    if not organization.id:
+        raise Exception()
     try:
         user, google_info = await get_google_user_from_token(
             body.token, session
