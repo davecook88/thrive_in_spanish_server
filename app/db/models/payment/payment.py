@@ -1,12 +1,11 @@
 from datetime import datetime
 from typing import ClassVar, List, Optional, Union, Callable
 
-from pydantic import Field
-from sqlmodel import Relationship, Session
+from sqlmodel import Relationship, Session, Field
 from stripe import PaymentIntent
 from app.db.base_model import DBModel
-from app.db.models.course.course import Course
-from app.db.models.user.user import Student, UserFull
+from app.db.models.course.course import Course, CourseStudent
+from app.db.models.user.user import Student, User, UserFull
 from app.payment.api.types import StripePaymentIntentMetadata
 
 
@@ -15,22 +14,22 @@ class PaymentModelException(Exception):
 
 
 class Payment(DBModel, table=True):
+    __tablename__: ClassVar[Union[str, Callable[..., str]]] = "payment"
     id: Optional[int] = Field(primary_key=True, default=None)
     user_id: int = Field(foreign_key="user.id")
-    user: UserFull = Relationship()
+    user: User = Relationship()
     amount: int  # Number to help order in terms of difficulty
     payment_date: datetime = datetime.utcnow()
-    package_id: int = Field(foreign_key="payment_package.id")
-    package: "PaymentPackage" = Relationship()
+    payment_package: "PaymentPackage" = Relationship(back_populates="payment")
 
     @staticmethod
     def register_stripe_payment_intent(
         session: Session, payment_intent: PaymentIntent
     ) -> "Payment":
         metadata = StripePaymentIntentMetadata(**payment_intent["metadata"])
-        user = (
-            session.query(UserFull)
-            .filter(UserFull.google_id == metadata.user_google_id)
+        user: Optional[UserFull] = (
+            session.query(User)
+            .filter(User.google_id == metadata.user_google_id)
             .first()
         )
         if not user:
@@ -46,16 +45,24 @@ class Payment(DBModel, table=True):
 class PaymentPackage(DBModel, table=True):
     __tablename__: ClassVar[Union[str, Callable[..., str]]] = "payment_package"
     id: Optional[int] = Field(primary_key=True, default=None)
-    payment_id: int = Field(foreign_key="payment.id")
-    payment: Payment = Relationship()
+    payment_id: Optional[int] = Field(foreign_key=Payment.id)
+    payment: "Payment" = Relationship(
+        back_populates="payment_package",
+        sa_relationship_kwargs={"cascade": "delete"},
+    )
+    course_id: Optional[int] = Field(foreign_key=Course.id)
     courses: List[Course] = Relationship(back_populates="payment_package")
     package_limitations: List["PaymentPackageLimitations"] = Relationship(
-        back_populates="payment_package"
+        back_populates="payment_package",
+        sa_relationship_kwargs={"cascade": "delete"},
     )
     student_id: int = Field(foreign_key="student.id")
     student: Student = Relationship(back_populates="payment_packages")
     courses_booked: int
     courses_bought: int
+    course_student: CourseStudent = Relationship(
+        back_populates="payment_packages"
+    )
 
     @property
     def courses_remaining(self):

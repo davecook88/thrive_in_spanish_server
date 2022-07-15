@@ -6,7 +6,7 @@ from google.oauth2 import id_token
 from google.auth.transport import requests
 
 from app.core.config import settings
-from app.db.models.user.user import User, UserFull
+from app.db.models.user.user import User
 from app.db.get_session import get_session
 
 
@@ -49,7 +49,7 @@ async def get_google_user_from_token(
 
 async def get_current_user(
     authorization: str = Header(), session: Session = Depends(get_session)
-) -> UserFull:
+) -> User:
     token = authorization.replace("Bearer ", "")
     idinfo: Mapping[str, Any] = id_token.verify_oauth2_token(
         token, requests.Request(), settings.GOOGLE_CLIENT_ID

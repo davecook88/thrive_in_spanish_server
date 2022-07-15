@@ -1,6 +1,4 @@
 from typing import List
-from pydantic import BaseModel
-
 from sqlalchemy import and_
 from app.auth.get_current_user import get_current_user
 from app.bookings.types import (
@@ -11,12 +9,13 @@ from app.bookings.utils import clear_availability
 from app.db.get_session import get_session
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import Session, col, select
-from app.db.models.availability.availability_models import (
+from app.db.models.user.user import (
     TeacherAvailability,
 )
 from datetime import datetime
 
-from app.db.models.user.user import User, UserFull, Teacher
+from app.db.models.user.user import User, Teacher
+from app.utils.params import ListAPIParams
 
 booking_router = APIRouter(
     prefix="/bookings",
@@ -26,11 +25,9 @@ booking_router = APIRouter(
 )
 
 
-class ListBookingsParams(BaseModel):
+class ListBookingsParams(ListAPIParams):
     from_date: datetime
     until_date: datetime
-    limit: int
-    page: int
 
 
 async def list_bookings_params(
@@ -49,7 +46,7 @@ async def list_bookings_params(
     "/teacher-availability", response_model=List[TeacherAvailability]
 )
 async def get_availiability(
-    current_user: UserFull = Depends(get_current_user),
+    current_user: User = Depends(get_current_user),
     params: ListBookingsParams = Depends(list_bookings_params),
     session: Session = Depends(get_session),
 ) -> List[TeacherAvailability]:
@@ -64,7 +61,7 @@ async def get_availiability(
                 col(TeacherAvailability.start) > params.from_date,
             )
         )
-        .offset(params.limit * (params.page - 1))
+        .offset(params.limit * (params.page))
         .limit(params.limit)
     )
     availability = session.exec(statement).all()
@@ -76,10 +73,11 @@ async def get_availiability(
 )
 async def create_availability(
     payload: PostAvailabilityPayload,
-    current_user: UserFull = Depends(get_current_user),
+    current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session),
 ):
-
+    if not current_user.id:
+        raise Exception()
     teacher = Teacher.get_teacher_by_user_id(
         session=session, user_id=current_user.id
     )
@@ -112,10 +110,11 @@ async def create_availability(
 )
 async def delete_availability(
     availability_id: str,
-    current_user: UserFull = Depends(get_current_user),
+    current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session),
 ):
-
+    if not current_user.id:
+        raise Exception()
     teacher = Teacher.get_teacher_by_user_id(
         session=session, user_id=current_user.id
     )
@@ -140,9 +139,11 @@ async def delete_availability(
 async def update_availability(
     availability_id: str,
     payload: PostAvailabilityPayloadEvent,
-    current_user: UserFull = Depends(get_current_user),
+    current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session),
 ):
+    if not current_user.id:
+        raise Exception()
     teacher = Teacher.get_teacher_by_user_id(
         session=session, user_id=current_user.id
     )
