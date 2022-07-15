@@ -15,7 +15,9 @@ def course(session: Session, teacher: Teacher):
         name="test course",
         description="description",
         difficulty=1,
+        max_students=4,
         organization_id=teacher.user.organization_id,
         price=1000,
+        student_ids=[],
     )
     return session.get(Course, c.id)

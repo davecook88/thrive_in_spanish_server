@@ -11,13 +11,14 @@ class CourseBase(BaseModel):
     max_students: int = 4
     price: int
     difficulty: int
-    teacher_id: int
+    teacher_ids: List[int]
+    student_ids: List[int] | None = None
 
 
 class CourseFull(BaseModel):
     id: int
     course_teachers: List[CourseTeacher]
-    course_students: List[CourseStudent]
+    course_students: Optional[List[CourseStudent]] = None
 
 
 class CourseUpdatePayload(CourseBase):
